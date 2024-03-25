@@ -20,12 +20,14 @@ import CollectionRow from './CollectionRow'
 
 const CollectionTable = () => {
   const {
+    realTimeReports,
     collections,
     locales,
     translateCollection,
     cancelTranslation,
     pauseTranslation,
     resumeTranslation,
+    refetchCollection,
   } = useCollection()
   const { formatMessage } = useIntl()
   const toggleNotification = useNotification()
@@ -152,6 +154,18 @@ const CollectionTable = () => {
 
   return (
     <Layout>
+      {
+        realTimeReports && (
+          <Box marginBottom={4}>
+            <Button onClick={refetchCollection}>
+              {formatMessage({
+                id: 'batch-translate.refreshButton.label',
+                defaultMessage: 'Refresh'
+              })}
+            </Button>
+          </Box>
+        )
+      }
       <Table colCount={COL_COUNT} rowCount={ROW_COUNT}>
         <CollectionTableHeader locales={locales} />
         <Tbody>

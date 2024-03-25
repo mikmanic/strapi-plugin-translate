@@ -166,21 +166,22 @@ export function useCollection() {
   }, [refetchIndex])
 
   // Start refreshing the collections when a collection is being indexed
-  useEffect(() => {
-    let interval
-
-    if (realTimeReports) {
-      interval = setInterval(() => {
-        refetchCollection()
-      }, 1000)
-    } else {
-      clearInterval(interval)
-    }
-
-    return () => clearInterval(interval)
-  }, [realTimeReports])
+  // useEffect(() => {
+  //   let interval
+  //
+  //   if (realTimeReports) {
+  //     interval = setInterval(() => {
+  //       refetchCollection()
+  //     }, 1000)
+  //   } else {
+  //     clearInterval(interval)
+  //   }
+  //
+  //   return () => clearInterval(interval)
+  // }, [realTimeReports])
 
   return {
+    realTimeReports,
     collections,
     locales,
     translateCollection,
@@ -188,7 +189,7 @@ export function useCollection() {
     resumeTranslation,
     cancelTranslation,
     refetchCollection,
-    handleNotification,
+    handleNotification
   }
 }
 

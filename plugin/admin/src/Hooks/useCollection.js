@@ -5,6 +5,7 @@ import getTrad from '../utils/getTrad'
 import useAlert from './useAlert'
 
 export function useCollection() {
+  const [isFetching, setIsFetching] = useState(false)
   const [collections, setCollections] = useState([])
   const [locales, setLocales] = useState([])
   const [refetchIndex, setRefetchIndex] = useState(true)
@@ -16,6 +17,10 @@ export function useCollection() {
     setRefetchIndex((prevRefetchIndex) => !prevRefetchIndex)
 
   const fetchCollections = async () => {
+    if (isFetching) return
+
+    setIsFetching(true)
+
     const { data, error } = await request(
       `/${pluginId}/batch-translate/content-types/`,
       {
@@ -46,6 +51,8 @@ export function useCollection() {
       setCollections(data.contentTypes)
       setLocales(data.locales)
     }
+
+    setIsFetching(false)
   }
 
   const translateCollection = async ({
@@ -181,6 +188,7 @@ export function useCollection() {
   // }, [realTimeReports])
 
   return {
+    isFetching,
     realTimeReports,
     collections,
     locales,

@@ -20,6 +20,7 @@ import CollectionRow from './CollectionRow'
 
 const CollectionTable = () => {
   const {
+    isFetching,
     realTimeReports,
     collections,
     locales,
@@ -157,7 +158,7 @@ const CollectionTable = () => {
       {
         realTimeReports && (
           <Box marginBottom={4}>
-            <Button onClick={refetchCollection}>
+            <Button onClick={refetchCollection} disabled={isFetching}>
               {formatMessage({
                 id: 'batch-translate.refreshButton.label',
                 defaultMessage: 'Refresh'

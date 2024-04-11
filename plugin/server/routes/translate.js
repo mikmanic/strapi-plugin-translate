@@ -3,6 +3,20 @@
 module.exports = [
   {
     method: 'POST',
+    path: '/translate-other-locales',
+    handler: 'translate.translateOtherLocales',
+    config: {
+      policies: [
+        'admin::isAuthenticatedAdmin',
+        {
+          name: 'plugin::content-manager.hasPermissions',
+          config: { actions: ['plugin::translate.translate'] },
+        },
+      ],
+    },
+  },
+  {
+    method: 'POST',
     path: '/translate',
     handler: 'translate.translate',
     config: {

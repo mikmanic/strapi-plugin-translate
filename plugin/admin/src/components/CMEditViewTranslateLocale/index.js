@@ -236,6 +236,41 @@ const Content = ({
     setIsOpen((prev) => !prev)
   }
 
+  const handleTranslateToOtherLocales = async () => {
+    setIsLoading(true)
+
+    try {
+      await request('/translate/translate-other-locales', {
+        method: 'POST',
+        body: {
+          id: initialData.id,
+          sourceLocale: currentLocale,
+          contentTypeUid: slug,
+        },
+      })
+
+      toggleNotification({
+        type: 'success',
+        message: {
+          id: getTrad('CMEditViewTranslateLocale.translate-to-locales-started-success'),
+          defaultMessage: 'Translation started successfully!',
+        },
+      })
+    } catch (err) {
+      console.error(err)
+
+      toggleNotification({
+        type: 'warning',
+        message: {
+          id: getTrad(err.response?.data?.error?.message),
+          defaultMessage: 'Failed to translate to other locales',
+        },
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
     <Box paddingTop={6}>
       <Typography variant="sigma" textColor="neutral600">
@@ -259,6 +294,22 @@ const Content = ({
           {formatMessage({
             id: getTrad('CMEditViewTranslateLocale.translate-text'),
             defaultMessage: 'Translate from another locale',
+          })}
+        </Flex>
+      </StyledTypography>
+
+      <StyledTypography
+        fontSize={2}
+        textColor="primary600"
+        as="button"
+        type="button"
+        onClick={handleTranslateToOtherLocales}
+      >
+        <Flex>
+          <Duplicate width="12px" height="12px" />
+          {formatMessage({
+            id: getTrad('CMEditViewTranslateLocale.translate-text-to-locales'),
+            defaultMessage: 'Translate to other locales',
           })}
         </Flex>
       </StyledTypography>

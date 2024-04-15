@@ -155,6 +155,8 @@ module.exports = ({ strapi }) => ({
           return acc;
         }, {})
 
+        strapi.log.debug(`Updating ${targetLocale} localization for ${contentTypeUid} id: ${existingLocalization.id}`)
+
         await strapi.entityService.update(
           contentTypeUid,
           existingLocalization.id,
@@ -191,6 +193,8 @@ module.exports = ({ strapi }) => ({
         // newLocaleData.localizations = newLocalizations
         newLocaleData.locale = targetLocale
         newLocaleData.publishedAt = new Date()
+
+        strapi.log.debug(`Creating ${targetLocale} localization for ${contentTypeUid} with id: ${sourceEntry.id}`)
 
         // Create localized entry
         const l = await strapi.entityService.create(contentTypeUid, {

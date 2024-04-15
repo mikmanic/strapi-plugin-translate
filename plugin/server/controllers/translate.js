@@ -359,111 +359,16 @@ module.exports = ({ strapi }) => ({
       contentSchema
     )
 
-    // Get the locale service from the i18n plugin
-    const localeService = strapi.plugin('i18n').service('locales');
-
-    // Fetch all locales
-    let locales = await localeService.find();
-
-    // remove source locale from locales
-    locales = locales.filter(locale => locale.code !== sourceLocale);
-
     // Translate the data to all other locales
-    for (const locale of locales) {
-      const targetLocale = locale.code;
-
-      const translatedData = await getService('translate').translate({
-        data: sourceEntry,
-        sourceLocale,
-        targetLocale,
+    process.nextTick(async () => {
+      await getService('translate').translateOtherLocales({
+        sourceEntry,
+        contentTypeUid,
         fieldsToTranslate,
-        priority: TRANSLATE_PRIORITY_DIRECT_TRANSLATION,
-      })
-
-      const existingLocalization = sourceEntry.localizations.find(l => l.locale === targetLocale);
-
-      if (existingLocalization) {
-        // Update the existing localization
-        const data = fieldsToTranslate.reduce((acc, field) => {
-          acc[field.field] = translatedData[field.field];
-          return acc;
-        })
-
-        strapi.log.debug(`Updating localization ${existingLocalization.id} for locale ${targetLocale} of entry ${sourceEntry.id}`);
-
-        await strapi.entityService.update(
-          contentTypeUid,
-          existingLocalization.id,
-          data
-        );
-      } else {
-        // Create a new localization
-        const contentSchema = strapi.contentTypes[contentTypeUid]
-
-        const withRelations = await translateRelations(
-          translatedData,
-          contentSchema,
-          targetLocale
-        )
-
-        const uidsUpdated = await updateUids(
-          withRelations,
-          contentTypeUid
-        )
-
-        const withFieldsDeleted = filterAllDeletedFields(
-          uidsUpdated,
-          contentTypeUid
-        )
-
-        const newLocaleData = cleanData(
-          withFieldsDeleted,
-          contentSchema
-        )
-
-        // Localizations will be synced after creating the new localization
-        // newLocaleData.localizations = newLocalizations
-        newLocaleData.locale = targetLocale
-        newLocaleData.publishedAt = new Date()
-
-        // Create localized entry
-        const l = await strapi.entityService.create(contentTypeUid, {
-          data: newLocaleData,
-          // Needed for syncing localizations
-          populate: ['localizations'],
-        })
-
-        // update main entry with new localization
-        sourceEntry.localizations.push({
-          id: l.id,
-          locale: l.locale
-        })
-
-        await strapi.query(contentTypeUid).update({
-          where: { id: sourceEntry.id },
-          data: {
-            localizations: sourceEntry.localizations.map(({ id }) => id)
-          },
-          populate: ['localizations']
-        })
-
-        // sync localizations
-        await strapi.plugin('i18n').service('localizations')
-          .syncLocalizations(
-            sourceEntry,
-            { model: strapi.getModel(contentTypeUid) }
-          );
-
-        // update  Non Localized Attributes in all localizations
-        await strapi.plugin('i18n').service('localizations')
-          .syncNonLocalizedAttributes(
-            sourceEntry,
-            { model: strapi.getModel(contentTypeUid) }
-          );
-      }
-    }
+      });
+    })
 
     // Send a response to the client
-    ctx.send({ message: 'Translation job started' });
+    ctx.send({ message: 'Translation job started' })
   },
 })

@@ -74,9 +74,10 @@ module.exports = {
       },
       // Which field types are translated (default string, text, richtext, components and dynamiczones)
       // Either string or object with type and format
-      // Possible formats: plain, markdown, html (default plain)
+      // Possible formats: plain, markdown, html, jsonb (default plain)
       translatedFieldTypes: [
         'string',
+        { type: 'blocks', format: 'jsonb' },
         { type: 'text', format: 'plain' },
         { type: 'richtext', format: 'markdown' },
         'component',
@@ -262,16 +263,21 @@ return reduceFunction(
 )
 ```
 
-The translate function receives the format of the text as `plain`, `markdown` or `html`. If your translation provider supports only html, but no markdown, you can use the `format` service to change the format before translating to `html` and afterwards back to `markdown`:
+The translate function receives the format of the text as `plain`, `markdown`, `html` or `jsonb` (Blocks Content Type). If your translation provider supports only html, but no markdown, you can use the `format` service to change the format before translating to `html` and afterwards back to `markdown`. Similarly you can convert `jsonb` to `html`:
 
 ```js
-const { markdownToHtml, htmlToMarkdown } = strapi.service(
+const { markdownToHtml, htmlToMarkdown, blocksToHtml, htmlToBlocks } = strapi.service(
   'plugin::translate.format'
 )
 
 if (format === 'markdown') {
   return htmlToMarkdown(providerClient.translateTexts(markdownToHtml(text)))
 }
+
+if (format === 'jsonb') {
+  return htmlToBlocks(providerClient.translateTexts(blocksToHtml(text)))
+}
+
 return providerClient.translateTexts(texts)
 ```
 

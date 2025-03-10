@@ -74,9 +74,10 @@ module.exports = {
       },
       // Which field types are translated (default string, text, richtext, components and dynamiczones)
       // Either string or object with type and format
-      // Possible formats: plain, markdown, html (default plain)
+      // Possible formats: plain, markdown, html, jsonb (default plain)
       translatedFieldTypes: [
         'string',
+        { type: 'blocks', format: 'jsonb' },
         { type: 'text', format: 'plain' },
         { type: 'richtext', format: 'markdown' },
         'component',
@@ -84,6 +85,10 @@ module.exports = {
       ],
       // If relations should be translated (default true)
       translateRelations: true,
+      // ignore updates for certain content types (default [], i.e. no content types are ignored)
+      ignoreUpdatedContentTypes: ['api::category.category'],
+      // wether to regenerate uids when batch updating (default false)
+      regenerateUids: true
     },
   },
   // ...
@@ -177,6 +182,14 @@ Additional remarks:
 - UIDs are automatically translated in batch translation mode, since otherwise the entities could not be created/published
 - If an error occurs, this will be shown in the logs or the message can be accessed by hovering over the `Job failed` badge
 
+### Retranslating updated entities
+
+If a localized entity is updated, an entry is added to the batch update section of the admin page. This allows easy retranslation of updated entities.
+By default, uids will be ignored. You can opt to regenerate them by setting the `translate.config.regenerateUids` key of the plugin options to `true`.
+The `translate.config.ignoreUpdatedContentTypes` key of the plugin options can be used to define an array of content types for which such updates should not be recorded.
+
+Note that updates are only considered if they trigger the `afterUpdate` lifecycle hook provided by strapi.
+
 ### Schema for translating relations
 
 _The related objects are not translated directly, only the relation itself is translated_
@@ -262,16 +275,21 @@ return reduceFunction(
 )
 ```
 
-The translate function receives the format of the text as `plain`, `markdown` or `html`. If your translation provider supports only html, but no markdown, you can use the `format` service to change the format before translating to `html` and afterwards back to `markdown`:
+The translate function receives the format of the text as `plain`, `markdown`, `html` or `jsonb` (Blocks Content Type). If your translation provider supports only html, but no markdown, you can use the `format` service to change the format before translating to `html` and afterwards back to `markdown`. Similarly you can convert `jsonb` to `html`:
 
 ```js
-const { markdownToHtml, htmlToMarkdown } = strapi.service(
+const { markdownToHtml, htmlToMarkdown, blocksToHtml, htmlToBlocks } = strapi.service(
   'plugin::translate.format'
 )
 
 if (format === 'markdown') {
   return htmlToMarkdown(providerClient.translateTexts(markdownToHtml(text)))
 }
+
+if (format === 'jsonb') {
+  return htmlToBlocks(providerClient.translateTexts(blocksToHtml(text)))
+}
+
 return providerClient.translateTexts(texts)
 ```
 

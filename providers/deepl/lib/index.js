@@ -31,6 +31,10 @@ module.exports = {
       typeof providerOptions.apiOptions === 'object'
         ? providerOptions.apiOptions
         : {}
+    const glossaries =
+      Array.isArray(providerOptions.glossaries)
+        ? providerOptions.glossaries
+        : []
 
     const client = new deepl.Translator(apiKey, {
       serverUrl: apiUrl,
@@ -47,7 +51,7 @@ module.exports = {
     return {
       /**
        * @param {{
-       *  text:string|string[],
+       *  text:string|string[]|any[],
        *  sourceLocale: string,
        *  targetLocale: string,
        *  priority: number,
@@ -68,16 +72,30 @@ module.exports = {
 
         const tagHandling = format === 'plain' ? undefined : 'html'
 
-        let textArray = Array.isArray(text) ? text : [text]
-
-        if (format === 'markdown') {
-          textArray = formatService.markdownToHtml(textArray)
+        let input = text
+        if (format === 'jsonb') {
+          input = await formatService.blockToHtml(input)
+        } else if (format === 'markdown') {
+          input = formatService.markdownToHtml(input)
         }
+
+        let textArray = Array.isArray(input) ? input : [input]
 
         const { chunks, reduceFunction } = chunksService.split(textArray, {
           maxLength: DEEPL_API_MAX_TEXTS,
           maxByteSize: DEEPL_API_ROUGH_MAX_REQUEST_SIZE,
         })
+
+        const parsedSourceLocale = parseLocale(sourceLocale, localeMap, 'source')
+        const parsedTargetLocale = parseLocale(targetLocale, localeMap, 'target')
+
+        const glossary = glossaries.find(
+          (g) => g.target_lang === parsedTargetLocale && g.source_lang === parsedSourceLocale
+        )?.id
+
+        if (apiOptions.glossary) {
+          console.warn('Glossary provided in apiOptions will be ignored and overwritten by the actual glossary that should be used for this translation.')
+        }
 
         const result = reduceFunction(
           await Promise.all(
@@ -90,15 +108,18 @@ module.exports = {
                       : DEEPL_PRIORITY_DEFAULT,
                 },
                 texts,
-                parseLocale(sourceLocale, localeMap, 'source'),
-                parseLocale(targetLocale, localeMap, 'target'),
-                { ...apiOptions, tagHandling }
+                parsedSourceLocale,
+                parsedTargetLocale,
+                { ...apiOptions, tagHandling, glossary }
               )
               return result.map((value) => value.text)
             })
           )
         )
-
+        
+        if (format === 'jsonb') {
+          return formatService.htmlToBlock(result)
+        }
         if (format === 'markdown') {
           return formatService.htmlToMarkdown(result)
         }

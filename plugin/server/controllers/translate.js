@@ -47,8 +47,11 @@ module.exports = ({ strapi }) => ({
         fieldsToTranslate,
         priority: TRANSLATE_PRIORITY_DIRECT_TRANSLATION,
       })
+
       const translatedRelations = await translateRelations(
-        translatedData,
+        strapi.config.get('plugin.translate').regenerateUids
+          ? await updateUids(translatedData, contentTypeUid)
+          : translatedData,
         contentSchema,
         targetLocale
       )
@@ -222,6 +225,24 @@ module.exports = ({ strapi }) => ({
         progress: job.progress,
         failureReason: job.failureReason,
       },
+    }
+  },
+  async batchUpdate(ctx) {
+    const { sourceLocale, updatedEntryIDs } = ctx.request.body
+
+    if (!sourceLocale) {
+      return ctx.badRequest('source locale is required')
+    }
+
+    if (!Array.isArray(updatedEntryIDs)) {
+      return ctx.badRequest('updatedEntryIDs must be an array')
+    }
+
+    ctx.body = {
+      data: await getService('translate').batchUpdate({
+        updatedEntryIDs,
+        sourceLocale,
+      }),
     }
   },
   async batchTranslateContentTypes(ctx) {

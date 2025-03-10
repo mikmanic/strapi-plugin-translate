@@ -8,11 +8,14 @@ module.exports = {
       translatedFieldTypes: [
         { type: 'string', format: 'plain' },
         { type: 'text', format: 'plain' },
+        { type: 'blocks', format: 'jsonb' },
         { type: 'richtext', format: 'markdown' },
         'component',
         'dynamiczone',
       ],
       translateRelations: true,
+      regenerateUids: false,
+      ignoreUpdatedContentTypes: [],
     }
   },
   validator({
@@ -20,6 +23,8 @@ module.exports = {
     providerOptions,
     translatedFieldTypes,
     translateRelations,
+    regenerateUids,
+    ignoreUpdatedContentTypes,
   }) {
     if (provider === 'dummy' && process.env.NODE_ENV !== 'test') {
       console.warn(
@@ -41,7 +46,7 @@ module.exports = {
         }
         if (
           field.format &&
-          !['plain', 'markdown', 'html'].includes(field.format)
+          !['plain', 'markdown', 'html', 'jsonb'].includes(field.format)
         ) {
           throw new Error(
             `unhandled format ${field.format} for translated field ${field.type}`
@@ -54,6 +59,12 @@ module.exports = {
     }
     if (providerOptions && typeof providerOptions !== 'object') {
       throw new Error('providerOptions has to be an object if it is defined')
+    }
+    if (typeof regenerateUids !== 'boolean') {
+      throw new Error('regenerateUids has to be a boolean')
+    }
+    if (!Array.isArray(ignoreUpdatedContentTypes)) {
+      throw new Error('ignoreUpdatedContentTypes has to be an Array')
     }
   },
 }
